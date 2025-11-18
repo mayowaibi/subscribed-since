@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "wxt-react-starter",
-  "description": "manifest.json description",
-  "version": "0.0.0",
+  "name": "subscribed-since",
+  "description": "Displays YouTube subscription dates",
+  "version": "1.0.0",
   "icons": {
     "128": "icon/128.png"
   },
@@ -18,11 +18,11 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Default Popup Title",
+    "default_title": "Subscribed Since",
     "default_popup": "popup.html"
   },
   "host_permissions": [
-    "*://*.google.com/*",
+    "*://*.youtube.com/*",
     "http://localhost/*"
   ],
   "content_security_policy": {
