@@ -1,8 +1,132 @@
 @import "tailwindcss";
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	min-width: 320px;
+	background: #ffffff;
+	color: #0f0f0f;
+	font-family:
+		Roboto,
+		Arial,
+		sans-serif;
+}
+
 #root {
-	max-width: 1280px;
-	margin: 0 auto;
-	padding: 2rem;
-	text-align: center;
-	/* background-color: #242424; */
+	width: 360px;
+}
+
+.popup-shell {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 18px;
+}
+
+.popup-header {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+}
+
+.app-mark {
+	display: grid;
+	flex: 0 0 40px;
+	width: 40px;
+	height: 40px;
+	place-items: center;
+	border-radius: 8px;
+	background: #f1f1f1;
+	font-size: 25px;
+}
+
+h1 {
+	margin: 0;
+	font-size: 20px;
+	line-height: 1.15;
+	font-weight: 750;
+	letter-spacing: 0;
+}
+
+p {
+	margin: 0;
+}
+
+.popup-header p,
+.sync-copy,
+.permission-copy,
+.message-copy {
+	color: #606060;
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+.status-panel {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+	padding: 12px;
+	border: 1px solid #e5e5e5;
+	border-radius: 8px;
+	background: #fafafa;
+}
+
+.status-panel > div {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.eyebrow {
+	color: #606060;
+	font-size: 11px;
+	font-weight: 650;
+	text-transform: uppercase;
+}
+
+strong {
+	font-size: 15px;
+	line-height: 1.2;
+}
+
+.error-copy {
+	padding: 10px;
+	border-radius: 8px;
+	background: #fff0f0;
+	color: #b00020;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.actions {
+	display: flex;
+	gap: 8px;
+}
+
+button {
+	min-height: 38px;
+	flex: 1;
+	border: 1px solid #d9d9d9;
+	border-radius: 8px;
+	background: #ffffff;
+	color: #0f0f0f;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 650;
+	cursor: pointer;
+}
+
+button.primary {
+	border-color: #cc0000;
+	background: #cc0000;
+	color: #ffffff;
+}
+
+button:disabled {
+	cursor: not-allowed;
+	opacity: 0.65;
 }
