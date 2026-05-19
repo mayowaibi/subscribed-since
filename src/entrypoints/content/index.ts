@@ -694,14 +694,14 @@ function installStyles() {
 		#${BADGE_ID} {
 			--ss-badge-bg: var(--yt-spec-button-chip-background-hover, #f2f2f2);
 			--ss-badge-fg: var(--yt-spec-text-primary, #0f0f0f);
-			--ss-badge-mark-bg: var(--yt-spec-text-primary, #0f0f0f);
-			--ss-badge-mark-fg: var(--yt-spec-base-background, #fff);
+			--ss-badge-mark-bg: #cf1a19;
+			--ss-badge-mark-fg: #fff;
 			display: inline-flex;
 			align-items: center;
 			gap: 8px;
 			box-sizing: border-box;
 			min-height: 36px;
-			padding: 5px 12px 5px 6px;
+			padding: 5px 14px 5px 8px;
 			border: 0;
 			border-radius: 18px;
 			background: var(--ss-badge-bg);
@@ -752,8 +752,8 @@ function installStyles() {
 		[dark] #${BADGE_ID} {
 			--ss-badge-bg: #282828;
 			--ss-badge-fg: var(--yt-spec-text-primary, #fff);
-			--ss-badge-mark-bg: var(--yt-spec-text-primary, #fff);
-			--ss-badge-mark-fg: var(--yt-spec-base-background, #0f0f0f);
+			--ss-badge-mark-bg: #cf1a19;
+			--ss-badge-mark-fg: #fff;
 		}
 
 		html[dark] #${BADGE_ID} .ss-badge-mark,

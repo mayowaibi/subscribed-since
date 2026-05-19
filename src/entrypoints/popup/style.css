@@ -25,7 +25,7 @@ body {
   flex-direction: column;
   gap: 16px;
   padding: 18px;
-  background: #f3f1ec;
+  background: #f0efed;
 }
 
 .popup-header {
@@ -62,7 +62,7 @@ p {
   gap: 10px;
   padding: 12px;
   border: 1px solid #d7d1c7;
-  background: #ebe7df;
+  background: rgb(224, 223, 222);
 }
 
 .status-panel > div {
@@ -112,7 +112,7 @@ button {
 
 button.primary {
   border-color: #8f2525;
-  background: #a83232;
+  background: #cf1a19;
   color: #f3eeee;
 }
 
