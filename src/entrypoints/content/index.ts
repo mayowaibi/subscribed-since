@@ -15,6 +15,8 @@ const PAGE_CONTEXT_RESPONSE_TYPE = "SS_PAGE_CONTEXT_CHANNEL_ID";
 const PAGE_CONTEXT_SCRIPT_ID = "ss-page-context-channel-reader";
 const NAVIGATION_RENDER_WINDOW_MS = 10_000;
 const NAVIGATION_RENDER_INTERVAL_MS = 500;
+const NAVIGATION_SETTLE_DELAY_MS = 650;
+const PAGE_WATCHDOG_INTERVAL_MS = 5000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 type SubscriptionTenure = {
@@ -42,12 +44,15 @@ export default defineContentScript({
 		let subscribeRetryTimer: ReturnType<typeof setTimeout> | undefined;
 		let subscribeChangeTimer: ReturnType<typeof setTimeout> | undefined;
 		let badgeRetryTimer: ReturnType<typeof setTimeout> | undefined;
+		let pageWatchdogTimer: ReturnType<typeof setInterval> | undefined;
 		let navigationObserver: MutationObserver | undefined;
 		let readinessObserver: MutationObserver | undefined;
+		let navigationSettlingUntil = 0;
 		let isActive = true;
 
 		installStyles();
 		startNavigationRenderLoop(false);
+		startPageWatchdog();
 		observeYouTubeNavigation();
 		observePageReadiness();
 		observeCacheChanges();
@@ -80,6 +85,14 @@ export default defineContentScript({
 			});
 			window.addEventListener("popstate", () => {
 				startNavigationRenderLoop(true);
+			});
+			window.addEventListener("focus", () => {
+				startNavigationRenderLoop(false);
+			});
+			document.addEventListener("visibilitychange", () => {
+				if (document.visibilityState === "visible") {
+					startNavigationRenderLoop(false);
+				}
 			});
 
 			navigationObserver = new MutationObserver(() => {
@@ -120,6 +133,39 @@ export default defineContentScript({
 			readinessObserver.observe(document, { subtree: true, childList: true });
 		}
 
+		function startPageWatchdog() {
+			let lastObservedHref = location.href;
+
+			pageWatchdogTimer = setInterval(() => {
+				if (!isActive) {
+					return;
+				}
+
+				if (location.href !== lastObservedHref) {
+					lastObservedHref = location.href;
+					startNavigationRenderLoop(true);
+					observeSubscribeButtonChanges();
+					return;
+				}
+
+				if (document.visibilityState === "hidden" || !isSupportedYouTubePage()) {
+					return;
+				}
+
+				const badge = document.getElementById(BADGE_ID);
+				if (
+					!hasConfirmedNoSubscriptionForCurrentHref() &&
+					(!badge || badge.dataset.ssHref !== location.href || !findBadgeTarget(false))
+				) {
+					scheduleRender();
+				}
+			}, PAGE_WATCHDOG_INTERVAL_MS);
+		}
+
+		function hasConfirmedNoSubscriptionForCurrentHref() {
+			return lastNoSubscriptionPageKey.startsWith(`${location.href}|`);
+		}
+
 		function observeCacheChanges() {
 			browser.storage.onChanged.addListener((changes, areaName) => {
 				if (areaName === "local" && CACHE_STORAGE_KEY in changes) {
@@ -141,6 +187,9 @@ export default defineContentScript({
 			const target = findSubscribeSurface();
 
 			if (!target) {
+				if (subscribeRetryTimer) {
+					clearTimeout(subscribeRetryTimer);
+				}
 				subscribeRetryTimer = setTimeout(observeSubscribeButtonChanges, 1000);
 				return;
 			}
@@ -175,7 +224,7 @@ export default defineContentScript({
 			});
 		}
 
-		function scheduleRender() {
+		function scheduleRender(delay = 250) {
 			if (!isActive) {
 				return;
 			}
@@ -184,9 +233,10 @@ export default defineContentScript({
 				clearTimeout(renderTimer);
 			}
 
+			const navigationSettleDelay = Math.max(0, navigationSettlingUntil - Date.now());
 			renderTimer = setTimeout(() => {
 				void renderForCurrentPage();
-			}, 250);
+			}, Math.max(delay, navigationSettleDelay));
 		}
 
 		function startNavigationRenderLoop(clearBadge: boolean) {
@@ -198,7 +248,8 @@ export default defineContentScript({
 			lastNoSubscriptionPageKey = "";
 			resolvedBadge = undefined;
 			if (clearBadge) {
-				removeBadge();
+				navigationSettlingUntil = Date.now() + NAVIGATION_SETTLE_DELAY_MS;
+				removeStaleBadge();
 			}
 
 			if (navigationRenderTimer) {
@@ -234,13 +285,21 @@ export default defineContentScript({
 					return;
 				}
 
-				if (!isSupportedYouTubePage() || !channelId) {
+				if (!isSupportedYouTubePage()) {
 					lastPageKey = pageKey;
 					removeBadge();
 					return;
 				}
 
 				const existingBadge = document.getElementById(BADGE_ID);
+				if (!channelId) {
+					lastPageKey = pageKey;
+					if (existingBadge?.dataset.ssHref !== location.href) {
+						removeBadge();
+					}
+					return;
+				}
+
 				if (
 					lastPageKey === pageKey &&
 					existingBadge?.dataset.ssPageKey === pageKey &&
@@ -315,6 +374,9 @@ export default defineContentScript({
 
 			const target = findBadgeTarget();
 			if (!target) {
+				if (badgeRetryTimer) {
+					clearTimeout(badgeRetryTimer);
+				}
 				badgeRetryTimer = setTimeout(scheduleRender, 500);
 				return;
 			}
@@ -388,6 +450,9 @@ export default defineContentScript({
 			}
 			if (navigationRenderTimer) {
 				clearInterval(navigationRenderTimer);
+			}
+			if (pageWatchdogTimer) {
+				clearInterval(pageWatchdogTimer);
 			}
 		}
 	},
@@ -600,6 +665,15 @@ function createBadge({
 
 function removeBadge() {
 	document.getElementById(BADGE_ID)?.remove();
+}
+
+function removeStaleBadge() {
+	const existing = document.getElementById(BADGE_ID);
+	if (!existing || existing.dataset.ssHref === location.href) {
+		return;
+	}
+
+	existing.remove();
 }
 
 function installStyles() {
