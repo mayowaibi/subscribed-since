@@ -1,4 +1,10 @@
+<p align="center">
+  <img src="./public/icon/128.png" alt="Subscribed Since logo" width="96" height="96">
+</p>
+
 # Subscribed Since
+
+[Chrome Web Store](TODO) · [Firefox Add-ons](TODO) · [Microsoft Edge Add-ons](TODO)
 
 Subscribed Since is an open-source Chrome extension that shows when you
 subscribed to a YouTube channel directly on YouTube channel pages.
@@ -7,17 +13,13 @@ The extension uses read-only YouTube access to fetch your subscription list and
 subscription timestamps, then displays the relevant subscription date beside the
 channel controls.
 
-## Install
+![Subscribed Since showing a subscription date on a YouTube channel page](./docs/assets/showcase.png)
 
-Subscribed Since is available on the Chrome Web Store.
+## Usage
 
-Chrome Web Store listing: TODO
-
-After installing:
-
-1. Pin or open the extension from Chrome's toolbar.
-2. Sign in with Google.
-3. Visit a YouTube channel homepage.
+1. Open the Subscribed Since menu from the extensions toolbar.
+2. Sign in with Google to your YouTube account.
+3. Visit a YouTube channel homepage (refresh if needed).
 4. If you are subscribed to that channel, the extension shows your subscription
    date on the page.
 
