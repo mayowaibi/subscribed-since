@@ -1,24 +1,91 @@
 # Subscribed Since
 
-A WXT + React Chrome extension that shows how many years you have been
-subscribed to a YouTube channel beside that channel's subscribe controls.
+Subscribed Since is an open-source Chrome extension that shows when you
+subscribed to a YouTube channel directly on YouTube channel pages.
 
-## OAuth setup
+The extension uses read-only YouTube access to fetch your subscription list and
+subscription timestamps, then displays the relevant subscription date beside the
+channel controls.
 
-The extension uses Chrome's Identity API and the YouTube Data API read-only
-scope. Before sign-in will work, create a Google Cloud OAuth client for a Chrome
-Extension and provide its client ID when running or building:
+## Install
 
-```sh
-YOUTUBE_OAUTH_CLIENT_ID="YOUR_CLIENT_ID.apps.googleusercontent.com" npm run dev
+Subscribed Since is available on the Chrome Web Store.
+
+Chrome Web Store listing: TODO
+
+After installing:
+
+1. Pin or open the extension from Chrome's toolbar.
+2. Sign in with Google.
+3. Visit a YouTube channel homepage.
+4. If you are subscribed to that channel, the extension shows your subscription
+   date on the page.
+
+## Privacy
+
+Subscribed Since requests this Google OAuth scope:
+
+```text
+https://www.googleapis.com/auth/youtube.readonly
 ```
 
-For a stable development/release extension ID, also provide the public extension
-key:
+The extension uses this read-only scope only to retrieve your YouTube
+subscriptions and their `publishedAt` subscription timestamps from the YouTube
+Data API.
 
-```sh
-CHROME_EXTENSION_KEY="YOUR_PUBLIC_EXTENSION_KEY" npm run build
+Subscription data is stored locally in your browser using Chrome extension local
+storage:
+
+```text
+chrome.storage.local["ss-cache-state"]
 ```
 
-Without those env vars the project still compiles, but the generated manifest
-contains a placeholder OAuth client ID.
+Subscribed Since does not upload your subscription data to an external server,
+sell it, share it with third parties, or use it for advertising.
+
+To inspect the local cache while developing or debugging, open the extension's
+service worker DevTools console from `chrome://extensions` and run:
+
+```js
+chrome.storage.local.get("ss-cache-state").then(console.log);
+```
+
+To clear the local cache:
+
+```js
+chrome.storage.local.remove("ss-cache-state");
+```
+
+## Permissions
+
+Subscribed Since uses these Chrome extension permissions:
+
+- `identity`: sign in with Google through Chrome's Identity API.
+- `storage`: store subscription metadata locally in the browser.
+- `alarms`: refresh subscription metadata periodically.
+- `*://*.youtube.com/*`: display subscription dates on YouTube pages.
+- `https://www.googleapis.com/*`: call the YouTube Data API.
+
+## Contributing
+
+Contributions are welcome. If you find a bug, have an idea for improving the
+YouTube page integration, or want to make the popup clearer, feel free to open an
+issue or pull request.
+
+For code changes:
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Install dependencies with `npm install`.
+4. Run the extension locally with `npm run dev`.
+5. Check your changes with `npm run compile` and `npm run build`.
+6. Open a pull request with a short description of what changed and how you
+   tested it.
+
+Please keep privacy and permissions in mind when contributing. The extension
+should continue to request the minimum access needed, store subscription data
+locally, and avoid sending YouTube account data to external services.
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).

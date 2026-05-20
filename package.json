@@ -3,6 +3,7 @@
   "description": "Displays YouTube channel subscription dates",
   "private": true,
   "version": "1.0.0",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
