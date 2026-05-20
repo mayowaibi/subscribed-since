@@ -1,10 +1,11 @@
 <p align="center">
-  <img src="./public/icon/128.png" alt="Subscribed Since logo" width="96" height="96">
+  <img src="./public/icon/128.png" alt="Subscribed Since logo" width="150" height="150">
 </p>
+<h1 align="center" style="color:red;">
+  Subscribed Since
+</h1>
 
-# Subscribed Since
-
-[Chrome Web Store](TODO) · [Firefox Add-ons](TODO) · [Microsoft Edge Add-ons](TODO)
+<!--[Chrome Web Store](TODO) · [Firefox Add-ons](TODO) · [Microsoft Edge Add-ons](TODO)-->
 
 Subscribed Since is an open-source Chrome extension that shows when you
 subscribed to a YouTube channel directly on YouTube channel pages.
