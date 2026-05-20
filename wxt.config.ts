@@ -17,7 +17,7 @@ export default defineConfig({
   outDir: "dist",
   modules: ["@wxt-dev/module-react"],
   manifest: {
-    name: "Subscribed Since",
+    name: "Subscribed Since - YouTube Subscription Dates",
     short_name: "Subscribed Since",
     icons: {
       "16": "icon/16.png",

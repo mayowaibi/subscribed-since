@@ -1,6 +1,6 @@
 {
   "name": "subscribed-since",
-  "description": "Displays YouTube channel subscription dates",
+  "description": "See exactly when you subscribed to any YouTube channel directly on channel pages.",
   "private": true,
   "version": "1.0.0",
   "license": "Apache-2.0",
