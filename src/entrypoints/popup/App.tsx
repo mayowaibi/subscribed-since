@@ -77,11 +77,12 @@ function App() {
   return (
     <main className="popup-shell">
       <header className="popup-header">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <img
             src="./icon/128.png"
-            alt="Subscribed Since Icon"
-            className="w-14"
+            alt=""
+            aria-hidden="true"
+            className="w-12"
           />
           <h1 className="text-[#CF1A19]">Subscribed Since</h1>
         </div>
@@ -126,11 +127,6 @@ function App() {
           </button>
         )}
       </div>
-
-      <p className="permission-copy">
-        Uses read-only YouTube access. Subscription info is stored locally in
-        browser.
-      </p>
     </main>
   );
 }
