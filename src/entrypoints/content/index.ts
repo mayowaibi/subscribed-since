@@ -18,6 +18,11 @@ const NAVIGATION_RENDER_INTERVAL_MS = 500;
 const NAVIGATION_SETTLE_DELAY_MS = 650;
 const PAGE_WATCHDOG_INTERVAL_MS = 5000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const fullDateFormatter = new Intl.DateTimeFormat(undefined, {
+	month: "long",
+	day: "numeric",
+	year: "numeric",
+});
 
 type SubscriptionTenure = {
 	value: number;
@@ -278,16 +283,21 @@ export default defineContentScript({
 
 			try {
 				const requestId = ++renderRequestId;
-				const channelId = await findCurrentChannelId();
-				const pageKey = `${location.href}|${channelId ?? "none"}`;
 
 				if (!isActive) {
 					return;
 				}
 
 				if (!isSupportedYouTubePage()) {
-					lastPageKey = pageKey;
+					lastPageKey = `${location.href}|none`;
 					removeBadge();
+					return;
+				}
+
+				const channelId = await findCurrentChannelId();
+				const pageKey = `${location.href}|${channelId ?? "none"}`;
+
+				if (!isActive) {
 					return;
 				}
 
@@ -827,11 +837,7 @@ function formatDate(value: string) {
 		return value;
 	}
 
-	return new Intl.DateTimeFormat(undefined, {
-		month: "long",
-		day: "numeric",
-		year: "numeric",
-	}).format(date);
+	return fullDateFormatter.format(date);
 }
 
 function getSubscribeSurfaceText() {

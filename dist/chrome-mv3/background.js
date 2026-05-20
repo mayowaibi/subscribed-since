@@ -1,1 +1,292 @@
-var background=(function(){"use strict";function R(t){return t==null||typeof t=="function"?{main:t}:t}const a=globalThis.browser?.runtime?.id?globalThis.browser:globalThis.chrome,w="ss-cache-state";function b(){return{authStatus:"signed_out",subscriptionsByChannelId:{}}}const A="ss-refresh-subscriptions",T=360,v="https://www.googleapis.com/youtube/v3/subscriptions";let l,g;const B=R(()=>{a.runtime.onInstalled.addListener(()=>{E()}),a.runtime.onStartup.addListener(()=>{E()}),a.alarms.onAlarm.addListener(t=>{t.name===A&&i(!1)}),a.runtime.onMessage.addListener(t=>F(t))});async function F(t){try{switch(t.type){case"SS_SIGN_IN":{const e=await i(!0);return{ok:!0,state:u(e)}}case"SS_SIGN_OUT":{await G();const e=await m(b());return{ok:!0,state:u(e)}}case"SS_GET_STATE":{const e=await h();return{ok:!0,state:u(e)}}case"SS_REFRESH_ALL":{const e=await i(!!t.interactive);return{ok:!0,state:u(e)}}case"SS_GET_STATUS":{const e=await N(t.channelId);return{ok:!0,authStatus:e.authStatus,subscription:e.subscriptionsByChannelId[t.channelId],lastFullSyncAt:e.lastFullSyncAt,lastError:e.lastError}}case"SS_VISIBLE_SUBSCRIPTION_CHANGED":{U();const e=await h();return{ok:!0,state:u(e)}}}}catch(e){const n=await O(e);return{ok:!1,state:u(n),error:_(e)}}}async function E(){await a.alarms.create(A,{periodInMinutes:T})}async function N(t){const e=await h();if(e.authStatus!=="signed_in")return e;if(!e.lastFullSyncAt)return i(!1);const n=new Date(e.lastFullSyncAt).getTime();return!(Number.isNaN(n)?!0:Date.now()-n>T*60*1e3)||e.subscriptionsByChannelId[t]||i(!1).catch(()=>{}),e}async function i(t){return l||(l=L(t).finally(()=>{l=void 0}),l)}async function L(t){const e=await k(t),n=new Date().toISOString(),c={};let r;do{const s=new URL(v);s.searchParams.set("part","snippet"),s.searchParams.set("mine","true"),s.searchParams.set("maxResults","50"),r&&s.searchParams.set("pageToken",r);const o=await fetch(s.toString(),{headers:{Authorization:`Bearer ${e}`}});if(o.status===401)throw await I(e),new Error("Google authorization expired. Please sign in again.");if(!o.ok)throw new Error(`YouTube API request failed (${o.status}).`);const C=await o.json();for(const f of C.items??[]){const S=f.snippet?.resourceId?.channelId,P=f.snippet?.publishedAt;!S||!P||(c[S]={subscriptionId:f.id??S,channelId:S,channelTitle:f.snippet?.title??"YouTube channel",subscribedAt:P,fetchedAt:n})}r=C.nextPageToken}while(r);return m({authStatus:"signed_in",lastFullSyncAt:n,subscriptionsByChannelId:c})}async function h(){const t=await a.storage.local.get(w);return{...b(),...t[w]}}async function m(t){return await a.storage.local.set({[w]:t}),t}async function O(t){const e=await h();return m({...e,authStatus:e.authStatus==="signed_in"?"error":"signed_out",lastError:_(t)})}function u(t){return{authStatus:t.authStatus,lastFullSyncAt:t.lastFullSyncAt,lastError:t.lastError,subscriptionCount:Object.keys(t.subscriptionsByChannelId).length}}function U(){g&&clearTimeout(g),g=setTimeout(()=>{i(!1)},3e3)}async function G(){const t=await k(!1).catch(()=>{});t&&await I(t);const e=p();await new Promise(n=>{e.identity?.clearAllCachedAuthTokens?.(()=>n()),e.identity?.clearAllCachedAuthTokens||n()})}async function k(t){const e=p();if(!e.identity?.getAuthToken)throw new Error("Chrome identity API is unavailable.");return new Promise((n,c)=>{e.identity?.getAuthToken({interactive:t},r=>{const s=e.runtime?.lastError?.message;if(s){c(new Error(s));return}const o=typeof r=="string"?r:r?.token;if(!o){c(new Error("No Google auth token was returned."));return}n(o)})})}async function I(t){const e=p();await new Promise(n=>{e.identity?.removeCachedAuthToken?.({token:t},()=>n()),e.identity?.removeCachedAuthToken||n()})}function p(){return globalThis.chrome??{}}function _(t){return t instanceof Error?t.message:String(t)}function D(){}function d(t,...e){}const M={debug:(...t)=>d(console.debug,...t),log:(...t)=>d(console.log,...t),warn:(...t)=>d(console.warn,...t),error:(...t)=>d(console.error,...t)};let y;try{y=B.main(),y instanceof Promise&&console.warn("The background's main() function return a promise, but it must be synchronous")}catch(t){throw M.error("The background crashed on startup!"),t}return y})();
+var background = (function() {
+  "use strict";
+  function defineBackground(arg) {
+    if (arg == null || typeof arg === "function") return { main: arg };
+    return arg;
+  }
+  const browser$1 = globalThis.browser?.runtime?.id ? globalThis.browser : globalThis.chrome;
+  const browser = browser$1;
+  const CACHE_STORAGE_KEY = "ss-cache-state";
+  function emptyCacheState() {
+    return {
+      authStatus: "signed_out",
+      subscriptionsByChannelId: {}
+    };
+  }
+  const REFRESH_ALARM = "ss-refresh-subscriptions";
+  const REFRESH_PERIOD_MINUTES = 6 * 60;
+  const YOUTUBE_SUBSCRIPTIONS_URL = "https://www.googleapis.com/youtube/v3/subscriptions";
+  let refreshPromise;
+  let visibleChangeRefreshTimer;
+  const definition = defineBackground(() => {
+    browser.runtime.onInstalled.addListener(() => {
+      void ensureRefreshAlarm();
+    });
+    browser.runtime.onStartup.addListener(() => {
+      void ensureRefreshAlarm();
+    });
+    browser.alarms.onAlarm.addListener((alarm) => {
+      if (alarm.name === REFRESH_ALARM) {
+        void refreshAllSubscriptions(false);
+      }
+    });
+    browser.runtime.onMessage.addListener(
+      (message) => {
+        return handleMessage(message);
+      }
+    );
+  });
+  async function handleMessage(message) {
+    try {
+      switch (message.type) {
+        case "SS_SIGN_IN": {
+          const state = await refreshAllSubscriptions(true);
+          return { ok: true, state: toPublicState(state) };
+        }
+        case "SS_SIGN_OUT": {
+          await signOut();
+          const state = await saveState(emptyCacheState());
+          return { ok: true, state: toPublicState(state) };
+        }
+        case "SS_GET_STATE": {
+          const state = await getState();
+          return { ok: true, state: toPublicState(state) };
+        }
+        case "SS_REFRESH_ALL": {
+          const state = await refreshAllSubscriptions(Boolean(message.interactive));
+          return { ok: true, state: toPublicState(state) };
+        }
+        case "SS_GET_STATUS": {
+          const state = await getFreshEnoughState(message.channelId);
+          return {
+            ok: true,
+            authStatus: state.authStatus,
+            subscription: state.subscriptionsByChannelId[message.channelId],
+            lastFullSyncAt: state.lastFullSyncAt,
+            lastError: state.lastError
+          };
+        }
+        case "SS_VISIBLE_SUBSCRIPTION_CHANGED": {
+          scheduleVisibleChangeRefresh();
+          const state = await getState();
+          return { ok: true, state: toPublicState(state) };
+        }
+      }
+    } catch (error) {
+      const state = await setError(error);
+      return {
+        ok: false,
+        state: toPublicState(state),
+        error: getErrorMessage(error)
+      };
+    }
+  }
+  async function ensureRefreshAlarm() {
+    await browser.alarms.create(REFRESH_ALARM, {
+      periodInMinutes: REFRESH_PERIOD_MINUTES
+    });
+  }
+  async function getFreshEnoughState(channelId) {
+    const state = await getState();
+    if (state.authStatus !== "signed_in") {
+      return state;
+    }
+    if (!state.lastFullSyncAt) {
+      return refreshAllSubscriptions(false);
+    }
+    const lastSync = new Date(state.lastFullSyncAt).getTime();
+    const isStale = Number.isNaN(lastSync) ? true : Date.now() - lastSync > REFRESH_PERIOD_MINUTES * 60 * 1e3;
+    if (!isStale || state.subscriptionsByChannelId[channelId]) {
+      return state;
+    }
+    refreshAllSubscriptions(false).catch(() => void 0);
+    return state;
+  }
+  async function refreshAllSubscriptions(interactive) {
+    if (refreshPromise) {
+      return refreshPromise;
+    }
+    refreshPromise = doRefreshAllSubscriptions(interactive).finally(() => {
+      refreshPromise = void 0;
+    });
+    return refreshPromise;
+  }
+  async function doRefreshAllSubscriptions(interactive) {
+    const token = await getAuthToken(interactive);
+    const fetchedAt = (/* @__PURE__ */ new Date()).toISOString();
+    const subscriptionsByChannelId = {};
+    await collectSubscriptionPages({
+      token,
+      fetchedAt,
+      subscriptionsByChannelId
+    });
+    return saveState({
+      authStatus: "signed_in",
+      lastFullSyncAt: fetchedAt,
+      subscriptionsByChannelId
+    });
+  }
+  async function collectSubscriptionPages({
+    token,
+    fetchedAt,
+    subscriptionsByChannelId,
+    pageToken
+  }) {
+    const url = new URL(YOUTUBE_SUBSCRIPTIONS_URL);
+    const setSearchParam = url.searchParams.set.bind(url.searchParams);
+    setSearchParam("part", "snippet");
+    setSearchParam("mine", "true");
+    setSearchParam("maxResults", "50");
+    if (pageToken) {
+      setSearchParam("pageToken", pageToken);
+    }
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    if (response.status === 401) {
+      await removeCachedToken(token);
+      throw new Error("Google authorization expired. Please sign in again.");
+    }
+    if (!response.ok) {
+      throw new Error(`YouTube API request failed (${response.status}).`);
+    }
+    const data = await response.json();
+    for (const item of data.items ?? []) {
+      const channelId = item.snippet?.resourceId?.channelId;
+      const subscribedAt = item.snippet?.publishedAt;
+      if (!channelId || !subscribedAt) {
+        continue;
+      }
+      subscriptionsByChannelId[channelId] = {
+        subscriptionId: item.id ?? channelId,
+        channelId,
+        channelTitle: item.snippet?.title ?? "YouTube channel",
+        subscribedAt,
+        fetchedAt
+      };
+    }
+    if (data.nextPageToken) {
+      await collectSubscriptionPages({
+        token,
+        fetchedAt,
+        subscriptionsByChannelId,
+        pageToken: data.nextPageToken
+      });
+    }
+  }
+  async function getState() {
+    const result2 = await browser.storage.local.get(CACHE_STORAGE_KEY);
+    return {
+      ...emptyCacheState(),
+      ...result2[CACHE_STORAGE_KEY]
+    };
+  }
+  async function saveState(state) {
+    await browser.storage.local.set({ [CACHE_STORAGE_KEY]: state });
+    return state;
+  }
+  async function setError(error) {
+    const state = await getState();
+    return saveState({
+      ...state,
+      authStatus: state.authStatus === "signed_in" ? "error" : "signed_out",
+      lastError: getErrorMessage(error)
+    });
+  }
+  function toPublicState(state) {
+    return {
+      authStatus: state.authStatus,
+      lastFullSyncAt: state.lastFullSyncAt,
+      lastError: state.lastError,
+      subscriptionCount: Object.keys(state.subscriptionsByChannelId).length
+    };
+  }
+  function scheduleVisibleChangeRefresh() {
+    if (visibleChangeRefreshTimer) {
+      clearTimeout(visibleChangeRefreshTimer);
+    }
+    visibleChangeRefreshTimer = setTimeout(() => {
+      void refreshAllSubscriptions(false);
+    }, 3e3);
+  }
+  async function signOut() {
+    const token = await getAuthToken(false).catch(() => void 0);
+    if (token) {
+      await removeCachedToken(token);
+    }
+    const chromeApi = getChromeApi();
+    await new Promise((resolve) => {
+      chromeApi.identity?.clearAllCachedAuthTokens?.(() => resolve());
+      if (!chromeApi.identity?.clearAllCachedAuthTokens) {
+        resolve();
+      }
+    });
+  }
+  async function getAuthToken(interactive) {
+    const chromeApi = getChromeApi();
+    if (!chromeApi.identity?.getAuthToken) {
+      throw new Error("Chrome identity API is unavailable.");
+    }
+    return new Promise((resolve, reject) => {
+      chromeApi.identity?.getAuthToken({ interactive }, (result2) => {
+        const runtimeError = chromeApi.runtime?.lastError?.message;
+        if (runtimeError) {
+          reject(new Error(runtimeError));
+          return;
+        }
+        const token = typeof result2 === "string" ? result2 : result2?.token;
+        if (!token) {
+          reject(new Error("No Google auth token was returned."));
+          return;
+        }
+        resolve(token);
+      });
+    });
+  }
+  async function removeCachedToken(token) {
+    const chromeApi = getChromeApi();
+    await new Promise((resolve) => {
+      chromeApi.identity?.removeCachedAuthToken?.({ token }, () => resolve());
+      if (!chromeApi.identity?.removeCachedAuthToken) {
+        resolve();
+      }
+    });
+  }
+  function getChromeApi() {
+    return globalThis.chrome ?? {};
+  }
+  function getErrorMessage(error) {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return String(error);
+  }
+  function initPlugins() {
+  }
+  function print(method, ...args) {
+    return;
+  }
+  const logger = {
+    debug: (...args) => print(console.debug, ...args),
+    log: (...args) => print(console.log, ...args),
+    warn: (...args) => print(console.warn, ...args),
+    error: (...args) => print(console.error, ...args)
+  };
+  let result;
+  try {
+    initPlugins();
+    result = definition.main();
+    if (result instanceof Promise) {
+      console.warn(
+        "The background's main() function return a promise, but it must be synchronous"
+      );
+    }
+  } catch (err) {
+    logger.error("The background crashed on startup!");
+    throw err;
+  }
+  const result$1 = result;
+  return result$1;
+})();

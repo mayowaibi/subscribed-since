@@ -10,6 +10,12 @@ const initialState: PublicState = {
   authStatus: "signed_out",
   subscriptionCount: 0,
 };
+const syncDateFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
 
 function App() {
   const [state, setState] = useState<PublicState>(initialState);
@@ -57,7 +63,11 @@ function App() {
         request,
       )) as ExtensionResponse;
       applyStateResponse(response);
-      setMessage(response.ok ? "Done." : getResponseError(response));
+      setMessage(
+        response.ok
+          ? "Done. Reload your YouTube page."
+          : getResponseError(response),
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -163,12 +173,7 @@ function formatSyncDate(value: string) {
     return value;
   }
 
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
+  return syncDateFormatter.format(date);
 }
 
 export default App;

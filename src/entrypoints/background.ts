@@ -163,57 +163,80 @@ async function doRefreshAllSubscriptions(interactive: boolean) {
 	const token = await getAuthToken(interactive);
 	const fetchedAt = new Date().toISOString();
 	const subscriptionsByChannelId: Record<string, SubscriptionRecord> = {};
-	let pageToken: string | undefined;
 
-	do {
-		const url = new URL(YOUTUBE_SUBSCRIPTIONS_URL);
-		url.searchParams.set("part", "snippet");
-		url.searchParams.set("mine", "true");
-		url.searchParams.set("maxResults", "50");
-		if (pageToken) {
-			url.searchParams.set("pageToken", pageToken);
-		}
-
-		const response = await fetch(url.toString(), {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		});
-
-		if (response.status === 401) {
-			await removeCachedToken(token);
-			throw new Error("Google authorization expired. Please sign in again.");
-		}
-
-		if (!response.ok) {
-			throw new Error(`YouTube API request failed (${response.status}).`);
-		}
-
-		const data = (await response.json()) as YouTubeSubscriptionListResponse;
-		for (const item of data.items ?? []) {
-			const channelId = item.snippet?.resourceId?.channelId;
-			const subscribedAt = item.snippet?.publishedAt;
-			if (!channelId || !subscribedAt) {
-				continue;
-			}
-
-			subscriptionsByChannelId[channelId] = {
-				subscriptionId: item.id ?? channelId,
-				channelId,
-				channelTitle: item.snippet?.title ?? "YouTube channel",
-				subscribedAt,
-				fetchedAt,
-			};
-		}
-
-		pageToken = data.nextPageToken;
-	} while (pageToken);
+	await collectSubscriptionPages({
+		token,
+		fetchedAt,
+		subscriptionsByChannelId,
+	});
 
 	return saveState({
 		authStatus: "signed_in",
 		lastFullSyncAt: fetchedAt,
 		subscriptionsByChannelId,
 	});
+}
+
+async function collectSubscriptionPages({
+	token,
+	fetchedAt,
+	subscriptionsByChannelId,
+	pageToken,
+}: {
+	token: string;
+	fetchedAt: string;
+	subscriptionsByChannelId: Record<string, SubscriptionRecord>;
+	pageToken?: string;
+}): Promise<void> {
+	const url = new URL(YOUTUBE_SUBSCRIPTIONS_URL);
+	const setSearchParam = url.searchParams.set.bind(url.searchParams);
+	setSearchParam("part", "snippet");
+	setSearchParam("mine", "true");
+	setSearchParam("maxResults", "50");
+	if (pageToken) {
+		setSearchParam("pageToken", pageToken);
+	}
+
+	const response = await fetch(url.toString(), {
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+
+	if (response.status === 401) {
+		await removeCachedToken(token);
+		throw new Error("Google authorization expired. Please sign in again.");
+	}
+
+	if (!response.ok) {
+		throw new Error(`YouTube API request failed (${response.status}).`);
+	}
+
+	const data = (await response.json()) as YouTubeSubscriptionListResponse;
+	for (const item of data.items ?? []) {
+		const channelId = item.snippet?.resourceId?.channelId;
+		const subscribedAt = item.snippet?.publishedAt;
+		if (!channelId || !subscribedAt) {
+			continue;
+		}
+
+		subscriptionsByChannelId[channelId] = {
+			subscriptionId: item.id ?? channelId,
+			channelId,
+			channelTitle: item.snippet?.title ?? "YouTube channel",
+			subscribedAt,
+			fetchedAt,
+		};
+	}
+
+	if (data.nextPageToken) {
+		await collectSubscriptionPages({
+			token,
+			fetchedAt,
+			subscriptionsByChannelId,
+			pageToken: data.nextPageToken,
+		});
+	}
 }
 
 async function getState(): Promise<CacheState> {

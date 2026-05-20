@@ -1,12 +1,549 @@
-var content=(function(){"use strict";function _e(e){return e}const y=globalThis.browser?.runtime?.id?globalThis.browser:globalThis.chrome,z="ss-cache-state",d="ss-subscribed-since",k="ss-subscribed-since-style",j=/UC[\w-]{20,}/,Q=350,O="ss-subscribed-since",J="SS_GET_PAGE_CONTEXT_CHANNEL_ID",Z="SS_PAGE_CONTEXT_CHANNEL_ID",F="ss-page-context-channel-reader",ee=1e4,te=500,ne=650,re=5e3,ae=1440*60*1e3,se={matches:["*://*.youtube.com/*"],main(){let e="",t="",n,r=0,a,c,f,g,w,D,E,R,P,$,W=0,l=!0;be(),b(!1),Ee(),ve(),we(),Te(),S();function ve(){let s=location.href;const i=o=>{l&&location.href!==s&&(s=location.href,b(o),S())};document.addEventListener("yt-navigate-start",()=>{b(!0)}),document.addEventListener("yt-navigate-finish",()=>{s=location.href,b(!0),S()}),document.addEventListener("yt-page-data-updated",()=>{b(!1)}),window.addEventListener("popstate",()=>{b(!0)}),window.addEventListener("focus",()=>{b(!1)}),document.addEventListener("visibilitychange",()=>{document.visibilityState==="visible"&&b(!1)}),P=new MutationObserver(()=>{i(!0)}),P.observe(document,{subtree:!0,childList:!0})}function we(){$=new MutationObserver(()=>{l&&_()&&(f&&clearTimeout(f),f=setTimeout(()=>{const s=document.getElementById(d),i=G();(!s||!i||s.dataset.ssChannelId!==i||s.dataset.ssHref!==location.href||!N(!1))&&h()},Q))}),$.observe(document,{subtree:!0,childList:!0})}function Ee(){let s=location.href;R=setInterval(()=>{if(!l)return;if(location.href!==s){s=location.href,b(!0),S();return}if(document.visibilityState==="hidden"||!_())return;const i=document.getElementById(d);!Se()&&(!i||i.dataset.ssHref!==location.href||!N(!1))&&h()},re)}function Se(){return t.startsWith(`${location.href}|`)}function Te(){y.storage.onChanged.addListener((s,i)=>{i==="local"&&z in s&&(e="",t="",n=void 0,h())})}function S(){if(!l)return;a?.disconnect();const s=A();if(!s){w&&clearTimeout(w),w=setTimeout(S,1e3);return}let i=q();a=new MutationObserver(()=>{if(!l)return;const o=q();o!==i&&(i=o,e="",t="",n=void 0,K({type:"SS_VISIBLE_SUBSCRIPTION_CHANGED"}),D=setTimeout(h,3500))}),a.observe(s,{subtree:!0,childList:!0,characterData:!0,attributes:!0,attributeFilter:["aria-label","title"]})}function h(s=250){if(!l)return;c&&clearTimeout(c);const i=Math.max(0,W-Date.now());c=setTimeout(()=>{Ie()},Math.max(s,i))}function b(s){if(!l)return;e="",t="",n=void 0,s&&(W=Date.now()+ne,ue()),g&&clearInterval(g);const i=Date.now()+ee;h(),g=setInterval(()=>{if(Date.now()>i){g&&(clearInterval(g),g=void 0);return}h()},te)}async function Ie(){if(l)try{const s=++r,i=await ie(),o=`${location.href}|${i??"none"}`;if(!l)return;if(!_()){e=o,v();return}const p=document.getElementById(d);if(!i){e=o,p?.dataset.ssHref!==location.href&&v();return}if(e===o&&p?.dataset.ssPageKey===o&&p.dataset.ssHref===location.href)return;if(e=o,n?.pageKey===o){V({channelId:i,tenure:n.tenure,dateText:n.dateText,pageKey:o});return}if(t===o)return;const u=await K({type:"SS_GET_STATUS",channelId:i});if(!u||s!==r||!l)return;if(!he(u)||!u.ok||!u.subscription){t=o,n=void 0,v();return}t="",n={pageKey:o,tenure:fe(u.subscription.subscribedAt),dateText:ge(u.subscription.subscribedAt)},V({channelId:i,tenure:n.tenure,dateText:n.dateText,pageKey:o})}catch(s){X(s)}}function V({channelId:s,tenure:i,dateText:o,pageKey:p}){if(!l)return;const u=N();if(!u){E&&clearTimeout(E),E=setTimeout(h,500);return}const m=document.getElementById(d);if(m?.parentElement===u){m.dataset.ssChannelId=s,m.dataset.ssHref=location.href,m.dataset.ssPageKey=p,m.setAttribute("aria-label",`Subscribed since ${o}, ${U(i)}`),m.querySelector("[data-ss-tenure]").textContent=Y(i),m.querySelector("[data-ss-date]").textContent=o;return}v(),u.appendChild(le({channelId:s,tenure:i,dateText:o,pageKey:p}))}async function K(s){if(l)try{return await y.runtime.sendMessage(s)}catch(i){X(i)}}function X(s){de(s)&&Ce()}function Ce(){l&&(l=!1,r+=1,a?.disconnect(),P?.disconnect(),$?.disconnect(),xe(),v())}function xe(){c&&clearTimeout(c),f&&clearTimeout(f),w&&clearTimeout(w),D&&clearTimeout(D),E&&clearTimeout(E),g&&clearInterval(g),R&&clearInterval(R)}}};function _(){return B()}function B(e=location.pathname){return e.startsWith("/@")||e.startsWith("/channel/")||e.startsWith("/c/")||e.startsWith("/user/")}async function ie(){const e=location.pathname,t=T(e);if(t)return t;if(B(e))return await oe()??G()}function G(){const e=["ytd-browse[page-subtype='channels'] meta[itemprop='channelId']","ytd-browse[page-subtype='channels'] ytd-page-header-renderer a[href*='/channel/']","ytd-browse[page-subtype='channels'] yt-page-header-view-model a[href*='/channel/']","ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer a[href*='/channel/']","ytd-browse[page-subtype='channels'] #channel-header a[href*='/channel/']","ytd-browse[page-subtype='channels'] #page-header a[href*='/channel/']","meta[itemprop='channelId']","link[rel='canonical']","link[itemprop='url']"];for(const r of e){const a=document.querySelector(r),c=a?.getAttribute("content")??a?.getAttribute("href")??a?.textContent,f=T(c);if(f)return f}const t=document.querySelector("ytd-browse[page-subtype='channels']"),n=T(t?.querySelector("ytd-page-header-renderer, yt-page-header-view-model, ytd-c4-tabbed-header-renderer, #channel-header, #page-header")?.innerHTML);if(n)return n}function T(e){return e?.match(j)?.[0]}function oe(){const e=crypto.randomUUID();return new Promise(t=>{ce();const n=setTimeout(()=>{window.removeEventListener("message",r),t(void 0)},300);function r(a){if(a.source!==window)return;const c=a.data;c?.source!==O||c.type!==Z||c.requestId!==e||(clearTimeout(n),window.removeEventListener("message",r),t(T(c.channelId)))}window.addEventListener("message",r),window.postMessage({source:O,type:J,requestId:e},window.location.origin)})}function ce(){if(document.getElementById(F))return;const e=document.createElement("script");e.id=F,e.src=y.runtime.getURL("/page-context-channel.js"),document.documentElement.appendChild(e)}function de(e){return(e instanceof Error?e.message:String(e)).toLowerCase().includes("extension context invalidated")}function N(e=!0){const t=["ytd-browse[page-subtype='channels'] ytd-page-header-renderer #buttons","ytd-browse[page-subtype='channels'] ytd-page-header-renderer yt-flexible-actions-view-model","ytd-browse[page-subtype='channels'] yt-page-header-view-model yt-flexible-actions-view-model","ytd-browse[page-subtype='channels'] yt-page-header-view-model #buttons","ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer #buttons","ytd-browse[page-subtype='channels'] #channel-header #buttons","ytd-browse[page-subtype='channels'] #page-header #buttons"];for(const a of t){const c=document.querySelector(a);if(c instanceof HTMLElement)return e&&c.classList.add("ss-badge-host"),c}const n=A(),r=n?.closest("yt-flexible-actions-view-model, #buttons, #subscribe-button")??n?.parentElement??void 0;return r&&e&&r.classList.add("ss-badge-host"),r}function le({channelId:e,tenure:t,dateText:n,pageKey:r}){const a=document.createElement("div");return a.id=d,a.dataset.ssChannelId=e,a.dataset.ssHref=location.href,a.dataset.ssPageKey=r,a.setAttribute("aria-label",`Subscribed since ${n}, ${U(t)}`),a.innerHTML=`
+var content = (function() {
+  "use strict";
+  function defineContentScript(definition2) {
+    return definition2;
+  }
+  const browser$1 = globalThis.browser?.runtime?.id ? globalThis.browser : globalThis.chrome;
+  const browser = browser$1;
+  const CACHE_STORAGE_KEY = "ss-cache-state";
+  const BADGE_ID = "ss-subscribed-since";
+  const STYLE_ID = "ss-subscribed-since-style";
+  const CHANNEL_ID_RE = /UC[\w-]{20,}/;
+  const DOM_RENDER_DEBOUNCE_MS = 350;
+  const PAGE_CONTEXT_MESSAGE_SOURCE = "ss-subscribed-since";
+  const PAGE_CONTEXT_REQUEST_TYPE = "SS_GET_PAGE_CONTEXT_CHANNEL_ID";
+  const PAGE_CONTEXT_RESPONSE_TYPE = "SS_PAGE_CONTEXT_CHANNEL_ID";
+  const PAGE_CONTEXT_SCRIPT_ID = "ss-page-context-channel-reader";
+  const NAVIGATION_RENDER_WINDOW_MS = 1e4;
+  const NAVIGATION_RENDER_INTERVAL_MS = 500;
+  const NAVIGATION_SETTLE_DELAY_MS = 650;
+  const PAGE_WATCHDOG_INTERVAL_MS = 5e3;
+  const MS_PER_DAY = 24 * 60 * 60 * 1e3;
+  const fullDateFormatter = new Intl.DateTimeFormat(void 0, {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+  const definition = defineContentScript({
+    matches: ["*://*.youtube.com/*"],
+    main() {
+      let lastPageKey = "";
+      let lastNoSubscriptionPageKey = "";
+      let resolvedBadge;
+      let renderRequestId = 0;
+      let notificationObserver;
+      let renderTimer;
+      let readinessTimer;
+      let navigationRenderTimer;
+      let subscribeRetryTimer;
+      let subscribeChangeTimer;
+      let badgeRetryTimer;
+      let pageWatchdogTimer;
+      let navigationObserver;
+      let readinessObserver;
+      let navigationSettlingUntil = 0;
+      let isActive = true;
+      installStyles();
+      startNavigationRenderLoop(false);
+      startPageWatchdog();
+      observeYouTubeNavigation();
+      observePageReadiness();
+      observeCacheChanges();
+      observeSubscribeButtonChanges();
+      function observeYouTubeNavigation() {
+        let lastHref = location.href;
+        const handleNavigation = (clearBadge) => {
+          if (!isActive) {
+            return;
+          }
+          if (location.href !== lastHref) {
+            lastHref = location.href;
+            startNavigationRenderLoop(clearBadge);
+            observeSubscribeButtonChanges();
+          }
+        };
+        document.addEventListener("yt-navigate-start", () => {
+          startNavigationRenderLoop(true);
+        });
+        document.addEventListener("yt-navigate-finish", () => {
+          lastHref = location.href;
+          startNavigationRenderLoop(true);
+          observeSubscribeButtonChanges();
+        });
+        document.addEventListener("yt-page-data-updated", () => {
+          startNavigationRenderLoop(false);
+        });
+        window.addEventListener("popstate", () => {
+          startNavigationRenderLoop(true);
+        });
+        window.addEventListener("focus", () => {
+          startNavigationRenderLoop(false);
+        });
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            startNavigationRenderLoop(false);
+          }
+        });
+        navigationObserver = new MutationObserver(() => {
+          handleNavigation(true);
+        });
+        navigationObserver.observe(document, { subtree: true, childList: true });
+      }
+      function observePageReadiness() {
+        readinessObserver = new MutationObserver(() => {
+          if (!isActive) {
+            return;
+          }
+          if (!isSupportedYouTubePage()) {
+            return;
+          }
+          if (readinessTimer) {
+            clearTimeout(readinessTimer);
+          }
+          readinessTimer = setTimeout(() => {
+            const badge = document.getElementById(BADGE_ID);
+            const channelId = findCurrentChannelIdFromDom();
+            if (!badge || !channelId || badge.dataset.ssChannelId !== channelId || badge.dataset.ssHref !== location.href || !findBadgeTarget(false)) {
+              scheduleRender();
+            }
+          }, DOM_RENDER_DEBOUNCE_MS);
+        });
+        readinessObserver.observe(document, { subtree: true, childList: true });
+      }
+      function startPageWatchdog() {
+        let lastObservedHref = location.href;
+        pageWatchdogTimer = setInterval(() => {
+          if (!isActive) {
+            return;
+          }
+          if (location.href !== lastObservedHref) {
+            lastObservedHref = location.href;
+            startNavigationRenderLoop(true);
+            observeSubscribeButtonChanges();
+            return;
+          }
+          if (document.visibilityState === "hidden" || !isSupportedYouTubePage()) {
+            return;
+          }
+          const badge = document.getElementById(BADGE_ID);
+          if (!hasConfirmedNoSubscriptionForCurrentHref() && (!badge || badge.dataset.ssHref !== location.href || !findBadgeTarget(false))) {
+            scheduleRender();
+          }
+        }, PAGE_WATCHDOG_INTERVAL_MS);
+      }
+      function hasConfirmedNoSubscriptionForCurrentHref() {
+        return lastNoSubscriptionPageKey.startsWith(`${location.href}|`);
+      }
+      function observeCacheChanges() {
+        browser.storage.onChanged.addListener((changes, areaName) => {
+          if (areaName === "local" && CACHE_STORAGE_KEY in changes) {
+            lastPageKey = "";
+            lastNoSubscriptionPageKey = "";
+            resolvedBadge = void 0;
+            scheduleRender();
+          }
+        });
+      }
+      function observeSubscribeButtonChanges() {
+        if (!isActive) {
+          return;
+        }
+        notificationObserver?.disconnect();
+        const target = findSubscribeSurface();
+        if (!target) {
+          if (subscribeRetryTimer) {
+            clearTimeout(subscribeRetryTimer);
+          }
+          subscribeRetryTimer = setTimeout(observeSubscribeButtonChanges, 1e3);
+          return;
+        }
+        let lastText = getSubscribeSurfaceText();
+        notificationObserver = new MutationObserver(() => {
+          if (!isActive) {
+            return;
+          }
+          const nextText = getSubscribeSurfaceText();
+          if (nextText === lastText) {
+            return;
+          }
+          lastText = nextText;
+          lastPageKey = "";
+          lastNoSubscriptionPageKey = "";
+          resolvedBadge = void 0;
+          void sendRuntimeMessage({
+            type: "SS_VISIBLE_SUBSCRIPTION_CHANGED"
+          });
+          subscribeChangeTimer = setTimeout(scheduleRender, 3500);
+        });
+        notificationObserver.observe(target, {
+          subtree: true,
+          childList: true,
+          characterData: true,
+          attributes: true,
+          attributeFilter: ["aria-label", "title"]
+        });
+      }
+      function scheduleRender(delay = 250) {
+        if (!isActive) {
+          return;
+        }
+        if (renderTimer) {
+          clearTimeout(renderTimer);
+        }
+        const navigationSettleDelay = Math.max(0, navigationSettlingUntil - Date.now());
+        renderTimer = setTimeout(() => {
+          void renderForCurrentPage();
+        }, Math.max(delay, navigationSettleDelay));
+      }
+      function startNavigationRenderLoop(clearBadge) {
+        if (!isActive) {
+          return;
+        }
+        lastPageKey = "";
+        lastNoSubscriptionPageKey = "";
+        resolvedBadge = void 0;
+        if (clearBadge) {
+          navigationSettlingUntil = Date.now() + NAVIGATION_SETTLE_DELAY_MS;
+          removeStaleBadge();
+        }
+        if (navigationRenderTimer) {
+          clearInterval(navigationRenderTimer);
+        }
+        const stopAt = Date.now() + NAVIGATION_RENDER_WINDOW_MS;
+        scheduleRender();
+        navigationRenderTimer = setInterval(() => {
+          if (Date.now() > stopAt) {
+            if (navigationRenderTimer) {
+              clearInterval(navigationRenderTimer);
+              navigationRenderTimer = void 0;
+            }
+            return;
+          }
+          scheduleRender();
+        }, NAVIGATION_RENDER_INTERVAL_MS);
+      }
+      async function renderForCurrentPage() {
+        if (!isActive) {
+          return;
+        }
+        try {
+          const requestId = ++renderRequestId;
+          if (!isActive) {
+            return;
+          }
+          if (!isSupportedYouTubePage()) {
+            lastPageKey = `${location.href}|none`;
+            removeBadge();
+            return;
+          }
+          const channelId = await findCurrentChannelId();
+          const pageKey = `${location.href}|${channelId ?? "none"}`;
+          if (!isActive) {
+            return;
+          }
+          const existingBadge = document.getElementById(BADGE_ID);
+          if (!channelId) {
+            lastPageKey = pageKey;
+            if (existingBadge?.dataset.ssHref !== location.href) {
+              removeBadge();
+            }
+            return;
+          }
+          if (lastPageKey === pageKey && existingBadge?.dataset.ssPageKey === pageKey && existingBadge.dataset.ssHref === location.href) {
+            return;
+          }
+          lastPageKey = pageKey;
+          if (resolvedBadge?.pageKey === pageKey) {
+            insertBadge({
+              channelId,
+              tenure: resolvedBadge.tenure,
+              dateText: resolvedBadge.dateText,
+              pageKey
+            });
+            return;
+          }
+          if (lastNoSubscriptionPageKey === pageKey) {
+            return;
+          }
+          const response = await sendRuntimeMessage({
+            type: "SS_GET_STATUS",
+            channelId
+          });
+          if (!response || requestId !== renderRequestId || !isActive) {
+            return;
+          }
+          if (!isStatusResponse(response) || !response.ok || !response.subscription) {
+            lastNoSubscriptionPageKey = pageKey;
+            resolvedBadge = void 0;
+            removeBadge();
+            return;
+          }
+          lastNoSubscriptionPageKey = "";
+          resolvedBadge = {
+            pageKey,
+            tenure: getSubscriptionTenure(response.subscription.subscribedAt),
+            dateText: formatDate(response.subscription.subscribedAt)
+          };
+          insertBadge({
+            channelId,
+            tenure: resolvedBadge.tenure,
+            dateText: resolvedBadge.dateText,
+            pageKey
+          });
+        } catch (error) {
+          handleExtensionError(error);
+        }
+      }
+      function insertBadge({
+        channelId,
+        tenure,
+        dateText,
+        pageKey
+      }) {
+        if (!isActive) {
+          return;
+        }
+        const target = findBadgeTarget();
+        if (!target) {
+          if (badgeRetryTimer) {
+            clearTimeout(badgeRetryTimer);
+          }
+          badgeRetryTimer = setTimeout(scheduleRender, 500);
+          return;
+        }
+        const existing = document.getElementById(BADGE_ID);
+        if (existing?.parentElement === target) {
+          existing.dataset.ssChannelId = channelId;
+          existing.dataset.ssHref = location.href;
+          existing.dataset.ssPageKey = pageKey;
+          existing.setAttribute(
+            "aria-label",
+            `Subscribed since ${dateText}, ${formatTenure(tenure)}`
+          );
+          existing.querySelector("[data-ss-tenure]").textContent = formatTenureMark(tenure);
+          existing.querySelector("[data-ss-date]").textContent = dateText;
+          return;
+        }
+        removeBadge();
+        target.appendChild(createBadge({ channelId, tenure, dateText, pageKey }));
+      }
+      async function sendRuntimeMessage(message) {
+        if (!isActive) {
+          return;
+        }
+        try {
+          return await browser.runtime.sendMessage(message);
+        } catch (error) {
+          handleExtensionError(error);
+        }
+      }
+      function handleExtensionError(error) {
+        if (isExtensionContextInvalidatedError(error)) {
+          stopContentScript();
+        }
+      }
+      function stopContentScript() {
+        if (!isActive) {
+          return;
+        }
+        isActive = false;
+        renderRequestId += 1;
+        notificationObserver?.disconnect();
+        navigationObserver?.disconnect();
+        readinessObserver?.disconnect();
+        clearManagedTimers();
+        removeBadge();
+      }
+      function clearManagedTimers() {
+        if (renderTimer) {
+          clearTimeout(renderTimer);
+        }
+        if (readinessTimer) {
+          clearTimeout(readinessTimer);
+        }
+        if (subscribeRetryTimer) {
+          clearTimeout(subscribeRetryTimer);
+        }
+        if (subscribeChangeTimer) {
+          clearTimeout(subscribeChangeTimer);
+        }
+        if (badgeRetryTimer) {
+          clearTimeout(badgeRetryTimer);
+        }
+        if (navigationRenderTimer) {
+          clearInterval(navigationRenderTimer);
+        }
+        if (pageWatchdogTimer) {
+          clearInterval(pageWatchdogTimer);
+        }
+      }
+    }
+  });
+  function isSupportedYouTubePage() {
+    return isChannelPage();
+  }
+  function isChannelPage(path = location.pathname) {
+    return path.startsWith("/@") || path.startsWith("/channel/") || path.startsWith("/c/") || path.startsWith("/user/");
+  }
+  async function findCurrentChannelId() {
+    const path = location.pathname;
+    const pathChannelId = matchChannelId(path);
+    if (pathChannelId) {
+      return pathChannelId;
+    }
+    if (!isChannelPage(path)) {
+      return void 0;
+    }
+    return await findCurrentChannelIdFromPageContext() ?? findCurrentChannelIdFromDom();
+  }
+  function findCurrentChannelIdFromDom() {
+    const channelSelectors = [
+      "ytd-browse[page-subtype='channels'] meta[itemprop='channelId']",
+      "ytd-browse[page-subtype='channels'] ytd-page-header-renderer a[href*='/channel/']",
+      "ytd-browse[page-subtype='channels'] yt-page-header-view-model a[href*='/channel/']",
+      "ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer a[href*='/channel/']",
+      "ytd-browse[page-subtype='channels'] #channel-header a[href*='/channel/']",
+      "ytd-browse[page-subtype='channels'] #page-header a[href*='/channel/']",
+      "meta[itemprop='channelId']",
+      "link[rel='canonical']",
+      "link[itemprop='url']"
+    ];
+    for (const selector of channelSelectors) {
+      const element = document.querySelector(selector);
+      const value = element?.getAttribute("content") ?? element?.getAttribute("href") ?? element?.textContent;
+      const channelId = matchChannelId(value);
+      if (channelId) {
+        return channelId;
+      }
+    }
+    const browse = document.querySelector("ytd-browse[page-subtype='channels']");
+    const headerChannelId = matchChannelId(
+      browse?.querySelector(
+        "ytd-page-header-renderer, yt-page-header-view-model, ytd-c4-tabbed-header-renderer, #channel-header, #page-header"
+      )?.innerHTML
+    );
+    if (headerChannelId) {
+      return headerChannelId;
+    }
+  }
+  function matchChannelId(value) {
+    return value?.match(CHANNEL_ID_RE)?.[0];
+  }
+  function findCurrentChannelIdFromPageContext() {
+    const requestId = crypto.randomUUID();
+    return new Promise((resolve) => {
+      injectPageContextChannelIdReader();
+      const timeout = setTimeout(() => {
+        window.removeEventListener("message", onMessage);
+        resolve(void 0);
+      }, 300);
+      function onMessage(event) {
+        if (event.source !== window) {
+          return;
+        }
+        const data = event.data;
+        if (data?.source !== PAGE_CONTEXT_MESSAGE_SOURCE || data.type !== PAGE_CONTEXT_RESPONSE_TYPE || data.requestId !== requestId) {
+          return;
+        }
+        clearTimeout(timeout);
+        window.removeEventListener("message", onMessage);
+        resolve(matchChannelId(data.channelId));
+      }
+      window.addEventListener("message", onMessage);
+      window.postMessage(
+        {
+          source: PAGE_CONTEXT_MESSAGE_SOURCE,
+          type: PAGE_CONTEXT_REQUEST_TYPE,
+          requestId
+        },
+        window.location.origin
+      );
+    });
+  }
+  function injectPageContextChannelIdReader() {
+    if (document.getElementById(PAGE_CONTEXT_SCRIPT_ID)) {
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = PAGE_CONTEXT_SCRIPT_ID;
+    script.src = browser.runtime.getURL("/page-context-channel.js");
+    document.documentElement.appendChild(script);
+  }
+  function isExtensionContextInvalidatedError(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.toLowerCase().includes("extension context invalidated");
+  }
+  function findBadgeTarget(markHost = true) {
+    const channelCandidates = [
+      "ytd-browse[page-subtype='channels'] ytd-page-header-renderer #buttons",
+      "ytd-browse[page-subtype='channels'] ytd-page-header-renderer yt-flexible-actions-view-model",
+      "ytd-browse[page-subtype='channels'] yt-page-header-view-model yt-flexible-actions-view-model",
+      "ytd-browse[page-subtype='channels'] yt-page-header-view-model #buttons",
+      "ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer #buttons",
+      "ytd-browse[page-subtype='channels'] #channel-header #buttons",
+      "ytd-browse[page-subtype='channels'] #page-header #buttons"
+    ];
+    for (const selector of channelCandidates) {
+      const element = document.querySelector(selector);
+      if (element instanceof HTMLElement) {
+        if (markHost) {
+          element.classList.add("ss-badge-host");
+        }
+        return element;
+      }
+    }
+    const subscribeSurface = findSubscribeSurface();
+    const target = subscribeSurface?.closest(
+      "yt-flexible-actions-view-model, #buttons, #subscribe-button"
+    ) ?? subscribeSurface?.parentElement ?? void 0;
+    if (target && markHost) {
+      target.classList.add("ss-badge-host");
+    }
+    return target;
+  }
+  function createBadge({
+    channelId,
+    tenure,
+    dateText,
+    pageKey
+  }) {
+    const container = document.createElement("div");
+    container.id = BADGE_ID;
+    container.dataset.ssChannelId = channelId;
+    container.dataset.ssHref = location.href;
+    container.dataset.ssPageKey = pageKey;
+    container.setAttribute(
+      "aria-label",
+      `Subscribed since ${dateText}, ${formatTenure(tenure)}`
+    );
+    container.innerHTML = `
 		<span class="ss-badge-mark" aria-hidden="true">
-			<span class="ss-badge-tenure" data-ss-tenure>${Y(t)}</span>
+			<span class="ss-badge-tenure" data-ss-tenure>${formatTenureMark(tenure)}</span>
 		</span>
 		<span class="ss-badge-copy">
 			<span class="ss-badge-title">SUBSCRIBED SINCE</span>
-			<span class="ss-badge-date" data-ss-date>${n}</span>
+			<span class="ss-badge-date" data-ss-date>${dateText}</span>
 		</span>
-	`,a}function v(){document.getElementById(d)?.remove()}function ue(){const e=document.getElementById(d);!e||e.dataset.ssHref===location.href||e.remove()}function be(){if(document.getElementById(k))return;const e=document.createElement("style");e.id=k,e.textContent=`
+	`;
+    return container;
+  }
+  function removeBadge() {
+    document.getElementById(BADGE_ID)?.remove();
+  }
+  function removeStaleBadge() {
+    const existing = document.getElementById(BADGE_ID);
+    if (!existing || existing.dataset.ssHref === location.href) {
+      return;
+    }
+    existing.remove();
+  }
+  function installStyles() {
+    if (document.getElementById(STYLE_ID)) {
+      return;
+    }
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = `
 		.ss-badge-host {
 			display: inline-flex !important;
 			align-items: center !important;
@@ -14,7 +551,7 @@ var content=(function(){"use strict";function _e(e){return e}const y=globalThis.
 			flex-wrap: wrap !important;
 		}
 
-		#${d} {
+		#${BADGE_ID} {
 			--ss-badge-bg: var(--yt-spec-button-chip-background-hover, #f2f2f2);
 			--ss-badge-fg: var(--yt-spec-text-primary, #0f0f0f);
 			--ss-badge-mark-bg: #cf1a19;
@@ -35,7 +572,7 @@ var content=(function(){"use strict";function _e(e){return e}const y=globalThis.
 			vertical-align: middle;
 		}
 
-		#${d} .ss-badge-mark {
+		#${BADGE_ID} .ss-badge-mark {
 			display: inline-grid;
 			place-items: center;
 			width: 24px;
@@ -45,50 +582,366 @@ var content=(function(){"use strict";function _e(e){return e}const y=globalThis.
 			color: var(--ss-badge-mark-fg);
 		}
 
-		#${d} .ss-badge-tenure {
+		#${BADGE_ID} .ss-badge-tenure {
 			font-size: 11px;
 			font-weight: 800;
 			line-height: 1;
 			font-variant-numeric: tabular-nums;
 		}
 
-		#${d} .ss-badge-copy {
+		#${BADGE_ID} .ss-badge-copy {
 			display: flex;
 			flex-direction: column;
 			align-items: flex-start;
 		}
 
-		#${d} .ss-badge-title {
+		#${BADGE_ID} .ss-badge-title {
 			font-size: 9px;
 			font-weight: 700;
 			letter-spacing: 0;
 			opacity: 1;
 		}
 
-		#${d} .ss-badge-date {
+		#${BADGE_ID} .ss-badge-date {
 			font-size: 11px;
 			font-weight: 700;
 			opacity: 1;
 		}
 
-		html[dark] #${d},
-		[dark] #${d} {
+		html[dark] #${BADGE_ID},
+		[dark] #${BADGE_ID} {
 			--ss-badge-bg: #282828;
 			--ss-badge-fg: var(--yt-spec-text-primary, #fff);
 			--ss-badge-mark-bg: #cf1a19;
 			--ss-badge-mark-fg: #fff;
 		}
 
-		html[dark] #${d} .ss-badge-mark,
-		[dark] #${d} .ss-badge-mark {
+		html[dark] #${BADGE_ID} .ss-badge-mark,
+		[dark] #${BADGE_ID} .ss-badge-mark {
 			background: var(--ss-badge-mark-bg);
 			color: var(--ss-badge-mark-fg);
 		}
 
 		@media (max-width: 700px) {
-			#${d} {
+			#${BADGE_ID} {
 				margin-top: 8px;
 			}
 		}
-	`,document.documentElement.appendChild(e)}function fe(e){const t=new Date(e);if(Number.isNaN(t.getTime()))return{value:0,unit:"D"};const n=new Date;let r=n.getFullYear()-t.getFullYear();if(n<H(t,r,"year")&&(r-=1),r>=1)return{value:r,unit:"Y"};let a=(n.getFullYear()-t.getFullYear())*12+n.getMonth()-t.getMonth();return n<H(t,a,"month")&&(a-=1),a>=1?{value:a,unit:"M"}:{value:Math.max(0,Math.floor((n.getTime()-t.getTime())/ae)),unit:"D"}}function H(e,t,n){const r=new Date(e);return n==="year"?r.setFullYear(e.getFullYear()+t):r.setMonth(e.getMonth()+t),r}function Y(e){return`${e.value}${e.unit}`}function U(e){const t=e.unit==="Y"?"year":e.unit==="M"?"month":"day";return`${e.value} ${t}${e.value===1?"":"s"}`}function ge(e){const t=new Date(e);return Number.isNaN(t.getTime())?e:new Intl.DateTimeFormat(void 0,{month:"long",day:"numeric",year:"numeric"}).format(t)}function q(){const e=A();return[e?.textContent,e?.getAttribute("aria-label"),e?.getAttribute("title")].filter(Boolean).join(" ").trim()}function A(){const e=["ytd-browse[page-subtype='channels'] ytd-page-header-renderer ytd-subscribe-button-renderer","ytd-browse[page-subtype='channels'] ytd-page-header-renderer button[aria-label*='Subscribe']","ytd-browse[page-subtype='channels'] ytd-page-header-renderer button[aria-label*='Subscribed']","ytd-browse[page-subtype='channels'] yt-page-header-view-model ytd-subscribe-button-renderer","ytd-browse[page-subtype='channels'] yt-page-header-view-model button[aria-label*='Subscribe']","ytd-browse[page-subtype='channels'] yt-page-header-view-model button[aria-label*='Subscribed']","ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer ytd-subscribe-button-renderer","ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer button[aria-label*='Subscribe']","ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer button[aria-label*='Subscribed']"];for(const t of e){const n=document.querySelector(t);if(n instanceof HTMLElement)return n}}function he(e){return"authStatus"in e}function I(e,...t){}const me={debug:(...e)=>I(console.debug,...e),log:(...e)=>I(console.log,...e),warn:(...e)=>I(console.warn,...e),error:(...e)=>I(console.error,...e)};class M extends Event{constructor(t,n){super(M.EVENT_NAME,{}),this.newUrl=t,this.oldUrl=n}static EVENT_NAME=L("wxt:locationchange")}function L(e){return`${y?.runtime?.id}:content:${e}`}function pe(e){let t,n;return{run(){t==null&&(n=new URL(location.href),t=e.setInterval(()=>{let r=new URL(location.href);r.href!==n.href&&(window.dispatchEvent(new M(r,n)),n=r)},1e3))}}}class C{constructor(t,n){this.contentScriptName=t,this.options=n,this.abortController=new AbortController,this.isTopFrame?(this.listenForNewerScripts({ignoreFirstEvent:!0}),this.stopOldScripts()):this.listenForNewerScripts()}static SCRIPT_STARTED_MESSAGE_TYPE=L("wxt:content-script-started");isTopFrame=window.self===window.top;abortController;locationWatcher=pe(this);receivedMessageIds=new Set;get signal(){return this.abortController.signal}abort(t){return this.abortController.abort(t)}get isInvalid(){return y.runtime.id==null&&this.notifyInvalidated(),this.signal.aborted}get isValid(){return!this.isInvalid}onInvalidated(t){return this.signal.addEventListener("abort",t),()=>this.signal.removeEventListener("abort",t)}block(){return new Promise(()=>{})}setInterval(t,n){const r=setInterval(()=>{this.isValid&&t()},n);return this.onInvalidated(()=>clearInterval(r)),r}setTimeout(t,n){const r=setTimeout(()=>{this.isValid&&t()},n);return this.onInvalidated(()=>clearTimeout(r)),r}requestAnimationFrame(t){const n=requestAnimationFrame((...r)=>{this.isValid&&t(...r)});return this.onInvalidated(()=>cancelAnimationFrame(n)),n}requestIdleCallback(t,n){const r=requestIdleCallback((...a)=>{this.signal.aborted||t(...a)},n);return this.onInvalidated(()=>cancelIdleCallback(r)),r}addEventListener(t,n,r,a){n==="wxt:locationchange"&&this.isValid&&this.locationWatcher.run(),t.addEventListener?.(n.startsWith("wxt:")?L(n):n,r,{...a,signal:this.signal})}notifyInvalidated(){this.abort("Content script context invalidated"),me.debug(`Content script "${this.contentScriptName}" context invalidated`)}stopOldScripts(){window.postMessage({type:C.SCRIPT_STARTED_MESSAGE_TYPE,contentScriptName:this.contentScriptName,messageId:Math.random().toString(36).slice(2)},"*")}verifyScriptStartedEvent(t){const n=t.data?.type===C.SCRIPT_STARTED_MESSAGE_TYPE,r=t.data?.contentScriptName===this.contentScriptName,a=!this.receivedMessageIds.has(t.data?.messageId);return n&&r&&a}listenForNewerScripts(t){let n=!0;const r=a=>{if(this.verifyScriptStartedEvent(a)){this.receivedMessageIds.add(a.data.messageId);const c=n;if(n=!1,c&&t?.ignoreFirstEvent)return;this.notifyInvalidated()}};addEventListener("message",r),this.onInvalidated(()=>removeEventListener("message",r))}}function Ae(){}function x(e,...t){}const ye={debug:(...e)=>x(console.debug,...e),log:(...e)=>x(console.log,...e),warn:(...e)=>x(console.warn,...e),error:(...e)=>x(console.error,...e)};return(async()=>{try{const{main:e,...t}=se,n=new C("content",t);return await e(n)}catch(e){throw ye.error('The content script "content" crashed on startup!',e),e}})()})();
+	`;
+    document.documentElement.appendChild(style);
+  }
+  function getSubscriptionTenure(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return { value: 0, unit: "D" };
+    }
+    const now = /* @__PURE__ */ new Date();
+    let years = now.getFullYear() - date.getFullYear();
+    if (now < getShiftedDate(date, years, "year")) {
+      years -= 1;
+    }
+    if (years >= 1) {
+      return { value: years, unit: "Y" };
+    }
+    let months = (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth();
+    if (now < getShiftedDate(date, months, "month")) {
+      months -= 1;
+    }
+    if (months >= 1) {
+      return { value: months, unit: "M" };
+    }
+    const days = Math.max(0, Math.floor((now.getTime() - date.getTime()) / MS_PER_DAY));
+    return { value: days, unit: "D" };
+  }
+  function getShiftedDate(date, amount, unit) {
+    const shifted = new Date(date);
+    if (unit === "year") {
+      shifted.setFullYear(date.getFullYear() + amount);
+    } else {
+      shifted.setMonth(date.getMonth() + amount);
+    }
+    return shifted;
+  }
+  function formatTenureMark(tenure) {
+    return `${tenure.value}${tenure.unit}`;
+  }
+  function formatTenure(tenure) {
+    const unit = tenure.unit === "Y" ? "year" : tenure.unit === "M" ? "month" : "day";
+    return `${tenure.value} ${unit}${tenure.value === 1 ? "" : "s"}`;
+  }
+  function formatDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return fullDateFormatter.format(date);
+  }
+  function getSubscribeSurfaceText() {
+    const target = findSubscribeSurface();
+    return [
+      target?.textContent,
+      target?.getAttribute("aria-label"),
+      target?.getAttribute("title")
+    ].filter(Boolean).join(" ").trim();
+  }
+  function findSubscribeSurface() {
+    const channelSelectors = [
+      "ytd-browse[page-subtype='channels'] ytd-page-header-renderer ytd-subscribe-button-renderer",
+      "ytd-browse[page-subtype='channels'] ytd-page-header-renderer button[aria-label*='Subscribe']",
+      "ytd-browse[page-subtype='channels'] ytd-page-header-renderer button[aria-label*='Subscribed']",
+      "ytd-browse[page-subtype='channels'] yt-page-header-view-model ytd-subscribe-button-renderer",
+      "ytd-browse[page-subtype='channels'] yt-page-header-view-model button[aria-label*='Subscribe']",
+      "ytd-browse[page-subtype='channels'] yt-page-header-view-model button[aria-label*='Subscribed']",
+      "ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer ytd-subscribe-button-renderer",
+      "ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer button[aria-label*='Subscribe']",
+      "ytd-browse[page-subtype='channels'] ytd-c4-tabbed-header-renderer button[aria-label*='Subscribed']"
+    ];
+    for (const selector of channelSelectors) {
+      const element = document.querySelector(selector);
+      if (element instanceof HTMLElement) {
+        return element;
+      }
+    }
+  }
+  function isStatusResponse(response) {
+    return "authStatus" in response;
+  }
+  function print$1(method, ...args) {
+    return;
+  }
+  const logger$1 = {
+    debug: (...args) => print$1(console.debug, ...args),
+    log: (...args) => print$1(console.log, ...args),
+    warn: (...args) => print$1(console.warn, ...args),
+    error: (...args) => print$1(console.error, ...args)
+  };
+  class WxtLocationChangeEvent extends Event {
+    constructor(newUrl, oldUrl) {
+      super(WxtLocationChangeEvent.EVENT_NAME, {});
+      this.newUrl = newUrl;
+      this.oldUrl = oldUrl;
+    }
+    static EVENT_NAME = getUniqueEventName("wxt:locationchange");
+  }
+  function getUniqueEventName(eventName) {
+    return `${browser?.runtime?.id}:${"content"}:${eventName}`;
+  }
+  function createLocationWatcher(ctx) {
+    let interval;
+    let oldUrl;
+    return {
+      /**
+       * Ensure the location watcher is actively looking for URL changes. If it's already watching,
+       * this is a noop.
+       */
+      run() {
+        if (interval != null) return;
+        oldUrl = new URL(location.href);
+        interval = ctx.setInterval(() => {
+          let newUrl = new URL(location.href);
+          if (newUrl.href !== oldUrl.href) {
+            window.dispatchEvent(new WxtLocationChangeEvent(newUrl, oldUrl));
+            oldUrl = newUrl;
+          }
+        }, 1e3);
+      }
+    };
+  }
+  class ContentScriptContext {
+    constructor(contentScriptName, options) {
+      this.contentScriptName = contentScriptName;
+      this.options = options;
+      this.abortController = new AbortController();
+      if (this.isTopFrame) {
+        this.listenForNewerScripts({ ignoreFirstEvent: true });
+        this.stopOldScripts();
+      } else {
+        this.listenForNewerScripts();
+      }
+    }
+    static SCRIPT_STARTED_MESSAGE_TYPE = getUniqueEventName(
+      "wxt:content-script-started"
+    );
+    isTopFrame = window.self === window.top;
+    abortController;
+    locationWatcher = createLocationWatcher(this);
+    receivedMessageIds = /* @__PURE__ */ new Set();
+    get signal() {
+      return this.abortController.signal;
+    }
+    abort(reason) {
+      return this.abortController.abort(reason);
+    }
+    get isInvalid() {
+      if (browser.runtime.id == null) {
+        this.notifyInvalidated();
+      }
+      return this.signal.aborted;
+    }
+    get isValid() {
+      return !this.isInvalid;
+    }
+    /**
+     * Add a listener that is called when the content script's context is invalidated.
+     *
+     * @returns A function to remove the listener.
+     *
+     * @example
+     * browser.runtime.onMessage.addListener(cb);
+     * const removeInvalidatedListener = ctx.onInvalidated(() => {
+     *   browser.runtime.onMessage.removeListener(cb);
+     * })
+     * // ...
+     * removeInvalidatedListener();
+     */
+    onInvalidated(cb) {
+      this.signal.addEventListener("abort", cb);
+      return () => this.signal.removeEventListener("abort", cb);
+    }
+    /**
+     * Return a promise that never resolves. Useful if you have an async function that shouldn't run
+     * after the context is expired.
+     *
+     * @example
+     * const getValueFromStorage = async () => {
+     *   if (ctx.isInvalid) return ctx.block();
+     *
+     *   // ...
+     * }
+     */
+    block() {
+      return new Promise(() => {
+      });
+    }
+    /**
+     * Wrapper around `window.setInterval` that automatically clears the interval when invalidated.
+     *
+     * Intervals can be cleared by calling the normal `clearInterval` function.
+     */
+    setInterval(handler, timeout) {
+      const id = setInterval(() => {
+        if (this.isValid) handler();
+      }, timeout);
+      this.onInvalidated(() => clearInterval(id));
+      return id;
+    }
+    /**
+     * Wrapper around `window.setTimeout` that automatically clears the interval when invalidated.
+     *
+     * Timeouts can be cleared by calling the normal `setTimeout` function.
+     */
+    setTimeout(handler, timeout) {
+      const id = setTimeout(() => {
+        if (this.isValid) handler();
+      }, timeout);
+      this.onInvalidated(() => clearTimeout(id));
+      return id;
+    }
+    /**
+     * Wrapper around `window.requestAnimationFrame` that automatically cancels the request when
+     * invalidated.
+     *
+     * Callbacks can be canceled by calling the normal `cancelAnimationFrame` function.
+     */
+    requestAnimationFrame(callback) {
+      const id = requestAnimationFrame((...args) => {
+        if (this.isValid) callback(...args);
+      });
+      this.onInvalidated(() => cancelAnimationFrame(id));
+      return id;
+    }
+    /**
+     * Wrapper around `window.requestIdleCallback` that automatically cancels the request when
+     * invalidated.
+     *
+     * Callbacks can be canceled by calling the normal `cancelIdleCallback` function.
+     */
+    requestIdleCallback(callback, options) {
+      const id = requestIdleCallback((...args) => {
+        if (!this.signal.aborted) callback(...args);
+      }, options);
+      this.onInvalidated(() => cancelIdleCallback(id));
+      return id;
+    }
+    addEventListener(target, type, handler, options) {
+      if (type === "wxt:locationchange") {
+        if (this.isValid) this.locationWatcher.run();
+      }
+      target.addEventListener?.(
+        type.startsWith("wxt:") ? getUniqueEventName(type) : type,
+        handler,
+        {
+          ...options,
+          signal: this.signal
+        }
+      );
+    }
+    /**
+     * @internal
+     * Abort the abort controller and execute all `onInvalidated` listeners.
+     */
+    notifyInvalidated() {
+      this.abort("Content script context invalidated");
+      logger$1.debug(
+        `Content script "${this.contentScriptName}" context invalidated`
+      );
+    }
+    stopOldScripts() {
+      window.postMessage(
+        {
+          type: ContentScriptContext.SCRIPT_STARTED_MESSAGE_TYPE,
+          contentScriptName: this.contentScriptName,
+          messageId: Math.random().toString(36).slice(2)
+        },
+        "*"
+      );
+    }
+    verifyScriptStartedEvent(event) {
+      const isScriptStartedEvent = event.data?.type === ContentScriptContext.SCRIPT_STARTED_MESSAGE_TYPE;
+      const isSameContentScript = event.data?.contentScriptName === this.contentScriptName;
+      const isNotDuplicate = !this.receivedMessageIds.has(event.data?.messageId);
+      return isScriptStartedEvent && isSameContentScript && isNotDuplicate;
+    }
+    listenForNewerScripts(options) {
+      let isFirst = true;
+      const cb = (event) => {
+        if (this.verifyScriptStartedEvent(event)) {
+          this.receivedMessageIds.add(event.data.messageId);
+          const wasFirst = isFirst;
+          isFirst = false;
+          if (wasFirst && options?.ignoreFirstEvent) return;
+          this.notifyInvalidated();
+        }
+      };
+      addEventListener("message", cb);
+      this.onInvalidated(() => removeEventListener("message", cb));
+    }
+  }
+  function initPlugins() {
+  }
+  function print(method, ...args) {
+    return;
+  }
+  const logger = {
+    debug: (...args) => print(console.debug, ...args),
+    log: (...args) => print(console.log, ...args),
+    warn: (...args) => print(console.warn, ...args),
+    error: (...args) => print(console.error, ...args)
+  };
+  const result = (async () => {
+    try {
+      initPlugins();
+      const { main, ...options } = definition;
+      const ctx = new ContentScriptContext("content", options);
+      return await main(ctx);
+    } catch (err) {
+      logger.error(
+        `The content script "${"content"}" crashed on startup!`,
+        err
+      );
+      throw err;
+    }
+  })();
+  return result;
+})();
 content;
