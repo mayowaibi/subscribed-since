@@ -12539,7 +12539,9 @@ function App() {
         request
       );
       applyStateResponse(response);
-      setMessage(response.ok ? "Done." : getResponseError(response));
+      setMessage(
+        response.ok ? "Done. Reload your YouTube page." : getResponseError(response)
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
