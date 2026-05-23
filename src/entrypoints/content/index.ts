@@ -661,15 +661,31 @@ function createBadge({
 		"aria-label",
 		`Subscribed since ${dateText}, ${formatTenure(tenure)}`
 	);
-	container.innerHTML = `
-		<span class="ss-badge-mark" aria-hidden="true">
-			<span class="ss-badge-tenure" data-ss-tenure>${formatTenureMark(tenure)}</span>
-		</span>
-		<span class="ss-badge-copy">
-			<span class="ss-badge-title">SUBSCRIBED SINCE</span>
-			<span class="ss-badge-date" data-ss-date>${dateText}</span>
-		</span>
-	`;
+
+	const mark = document.createElement("span");
+	mark.className = "ss-badge-mark";
+	mark.setAttribute("aria-hidden", "true");
+
+	const tenureText = document.createElement("span");
+	tenureText.className = "ss-badge-tenure";
+	tenureText.dataset.ssTenure = "";
+	tenureText.textContent = formatTenureMark(tenure);
+	mark.appendChild(tenureText);
+
+	const copy = document.createElement("span");
+	copy.className = "ss-badge-copy";
+
+	const title = document.createElement("span");
+	title.className = "ss-badge-title";
+	title.textContent = "SUBSCRIBED SINCE";
+
+	const date = document.createElement("span");
+	date.className = "ss-badge-date";
+	date.dataset.ssDate = "";
+	date.textContent = dateText;
+	copy.append(title, date);
+
+	container.append(mark, copy);
 	return container;
 }
 

@@ -65,7 +65,7 @@ function App() {
       applyStateResponse(response);
       setMessage(
         response.ok
-          ? "Done. Reload your YouTube page."
+          ? "Done. Reload your YouTube page if needed."
           : getResponseError(response),
       );
     } catch (error) {

@@ -26,6 +26,19 @@ type ChromeIdentity = {
 	};
 };
 
+type FirefoxAuthToken = {
+	accessToken: string;
+	expiresAt: number;
+};
+
+type FirefoxIdentity = {
+	getRedirectURL: () => string;
+	launchWebAuthFlow: (details: {
+		url: string;
+		interactive: boolean;
+	}) => Promise<string | undefined>;
+};
+
 type YouTubeSubscriptionListResponse = {
 	nextPageToken?: string;
 	items?: Array<{
@@ -42,8 +55,15 @@ type YouTubeSubscriptionListResponse = {
 
 const REFRESH_ALARM = "ss-refresh-subscriptions";
 const REFRESH_PERIOD_MINUTES = 6 * 60;
+const YOUTUBE_READONLY_SCOPE =
+	"https://www.googleapis.com/auth/youtube.readonly";
 const YOUTUBE_SUBSCRIPTIONS_URL =
 	"https://www.googleapis.com/youtube/v3/subscriptions";
+const FIREFOX_AUTH_TOKEN_STORAGE_KEY = "ss-firefox-google-auth-token";
+const FIREFOX_AUTH_EXPIRY_BUFFER_MS = 60 * 1000;
+const FIREFOX_GOOGLE_OAUTH_CLIENT_ID =
+	import.meta.env.WXT_FIREFOX_GOOGLE_OAUTH_CLIENT_ID?.trim() ??
+	"1082059658861-gjtntrgqnpaes4huds46rgrq4a7hm8df.apps.googleusercontent.com";
 
 let refreshPromise: Promise<CacheState> | undefined;
 let visibleChangeRefreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -281,6 +301,11 @@ function scheduleVisibleChangeRefresh() {
 }
 
 async function signOut() {
+	if (import.meta.env.FIREFOX) {
+		await browser.storage.local.remove(FIREFOX_AUTH_TOKEN_STORAGE_KEY);
+		return;
+	}
+
 	const token = await getAuthToken(false).catch(() => undefined);
 	if (token) {
 		await removeCachedToken(token);
@@ -296,6 +321,10 @@ async function signOut() {
 }
 
 async function getAuthToken(interactive: boolean): Promise<string> {
+	if (import.meta.env.FIREFOX) {
+		return getFirefoxAuthToken(interactive);
+	}
+
 	const chromeApi = getChromeApi();
 	if (!chromeApi.identity?.getAuthToken) {
 		throw new Error("Chrome identity API is unavailable.");
@@ -320,7 +349,115 @@ async function getAuthToken(interactive: boolean): Promise<string> {
 	});
 }
 
+async function getFirefoxAuthToken(interactive: boolean): Promise<string> {
+	const storedToken = await getStoredFirefoxAuthToken();
+	if (
+		storedToken &&
+		storedToken.expiresAt > Date.now() + FIREFOX_AUTH_EXPIRY_BUFFER_MS
+	) {
+		return storedToken.accessToken;
+	}
+
+	const redirectUri = getFirefoxOAuthRedirectUri();
+
+	const state = crypto.randomUUID();
+	const authorizationUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+	authorizationUrl.searchParams.set("client_id", FIREFOX_GOOGLE_OAUTH_CLIENT_ID);
+	authorizationUrl.searchParams.set("redirect_uri", redirectUri);
+	authorizationUrl.searchParams.set("response_type", "token");
+	authorizationUrl.searchParams.set("scope", YOUTUBE_READONLY_SCOPE);
+	authorizationUrl.searchParams.set("include_granted_scopes", "true");
+	authorizationUrl.searchParams.set("state", state);
+	if (!interactive) {
+		authorizationUrl.searchParams.set("prompt", "none");
+	}
+
+	let redirectResponse: string | undefined;
+	try {
+		redirectResponse = await getFirefoxIdentity().launchWebAuthFlow({
+			url: authorizationUrl.toString(),
+			interactive,
+		});
+	} catch (error) {
+		throw new Error(
+			`Firefox Google authorization failed for redirect URI ${redirectUri}: ${getErrorMessage(error)}`
+		);
+	}
+
+	if (!redirectResponse) {
+		throw new Error("Google authorization did not return a response.");
+	}
+
+	const responseParams = new URLSearchParams(
+		new URL(redirectResponse).hash.slice(1)
+	);
+	if (responseParams.get("state") !== state) {
+		throw new Error("Google authorization response could not be verified.");
+	}
+
+	const oauthError = responseParams.get("error");
+	if (oauthError) {
+		throw new Error(`Google authorization failed (${oauthError}).`);
+	}
+
+	const accessToken = responseParams.get("access_token");
+	if (!accessToken) {
+		throw new Error("No Google auth token was returned.");
+	}
+
+	const grantedScopes = responseParams.get("scope")?.split(" ") ?? [];
+	if (!grantedScopes.includes(YOUTUBE_READONLY_SCOPE)) {
+		throw new Error("Read-only YouTube access was not granted.");
+	}
+
+	const expiresInSeconds = Number(responseParams.get("expires_in"));
+	const expiresAt =
+		Date.now() +
+		(Number.isFinite(expiresInSeconds) ? expiresInSeconds : 3600) * 1000;
+	await browser.storage.local.set({
+		[FIREFOX_AUTH_TOKEN_STORAGE_KEY]: { accessToken, expiresAt },
+	});
+
+	return accessToken;
+}
+
+async function getStoredFirefoxAuthToken(): Promise<FirefoxAuthToken | undefined> {
+	const result = await browser.storage.local.get(FIREFOX_AUTH_TOKEN_STORAGE_KEY);
+	const token = result[FIREFOX_AUTH_TOKEN_STORAGE_KEY] as
+		| Partial<FirefoxAuthToken>
+		| undefined;
+	if (
+		typeof token?.accessToken !== "string" ||
+		typeof token.expiresAt !== "number"
+	) {
+		return;
+	}
+
+	return {
+		accessToken: token.accessToken,
+		expiresAt: token.expiresAt,
+	};
+}
+
+function getFirefoxOAuthRedirectUri() {
+	const redirectUrl = new URL(getFirefoxIdentity().getRedirectURL());
+	const redirectSubdomain = redirectUrl.hostname.split(".")[0];
+	return `http://127.0.0.1/mozoauth2/${redirectSubdomain}`;
+}
+
+function getFirefoxIdentity() {
+	return browser.identity as unknown as FirefoxIdentity;
+}
+
 async function removeCachedToken(token: string) {
+	if (import.meta.env.FIREFOX) {
+		const storedToken = await getStoredFirefoxAuthToken();
+		if (storedToken?.accessToken === token) {
+			await browser.storage.local.remove(FIREFOX_AUTH_TOKEN_STORAGE_KEY);
+		}
+		return;
+	}
+
 	const chromeApi = getChromeApi();
 	await new Promise<void>((resolve) => {
 		chromeApi.identity?.removeCachedAuthToken?.({ token }, () => resolve());
